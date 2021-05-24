@@ -1,0 +1,29 @@
+let submissionsTable = base.getTable('Combo_Grid');
+let urlField = submissionsTable.getField('Zoomout_img');
+let attachmentField = submissionsTable.getField('Zoomout_Attachment');
+
+let submissionsQuery = await submissionsTable.selectRecordsAsync();
+let updates = [];
+for (let record of submissionsQuery.records) {
+    let url = record.getCellValue(urlField);
+    let attachments = record.getCellValue(attachmentField);
+
+    // If this record already has an attachment, skip it.
+    if (attachments !== null) {
+        continue;
+    }
+
+    // Otherwise, attach the image at the URL.
+    updates.push({
+        id: record.id,
+        fields: {
+            [attachmentField.id]: [{url: url}]
+        }
+    });
+}
+
+// Update records in batches of 50.
+while (updates.length > 0) {
+    await submissionsTable.updateRecordsAsync(updates.slice(0, 50));
+    updates = updates.slice(50);
+}
